@@ -21,7 +21,7 @@ It even allows for formatting and printing of exception to standard out instead 
 * #3. When all output is in one stream (either standard out or standard error), you don't know what is an error and what isn't, so the logger provides six different logging levels. It ranks output in terms of importance (unimportant, normal importance, or important) and whether or not it is some sort of error or irregularity. The print statements are as follows:
 
 ```
-Printer.printGood("This message is very good. It prints in black. It also cannot be ignored (unless you turn off all output)");
+Printer.printVeryGood("This message is very good. It prints in black. It also cannot be ignored (unless you turn off all output)");
 Printer.printGood("This message is good. It prints in black.");
 Printer.printSlightlyGood("This message is slightly good. You can ignore it.");
 
