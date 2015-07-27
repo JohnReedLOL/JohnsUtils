@@ -92,13 +92,13 @@ public class Printer {
      * case the stack trace is very long). Note that the entire stack trace is
      * always backed up to the log file just in case.
      */
-    private static int numberOfRowsToDisplayInStackTraces_ = 6;
+    private static int myNumRowsPerStackTrace_ = 6;
 
     /**
      * @return the number of stack trace rows to be displayed in the terminal.
      */
     public static int getNumberOfRowsInStackTraces() {
-        return numberOfRowsToDisplayInStackTraces_;
+        return myNumRowsPerStackTrace_;
     }
 
     /**
@@ -110,7 +110,7 @@ public class Printer {
         if (numRows < 0) {
             throw new IllegalArgumentException("You can't display a negative number of rows in a stack trace.");
         }
-        numberOfRowsToDisplayInStackTraces_ = numRows;
+        myNumRowsPerStackTrace_ = numRows;
     }
 
     /**
@@ -575,7 +575,7 @@ public class Printer {
 
     /**
      * Prints out an exception formatted appropriately (the first
-     * {@link #numberOfRowsToDisplayInStackTraces_} lines of the stack trace
+     * {@link #myNumRowsPerStackTrace_} lines of the stack trace
      * with the point at which the exception is printed.).
      *
      * @param t Exception or error to be printed as an error.
@@ -642,7 +642,7 @@ public class Printer {
             /**
              * This will be the important (front) part of the stack trace.
              */
-            final int numImportantRows = numberOfRowsToDisplayInStackTraces_;
+            final int numImportantRows = myNumRowsPerStackTrace_;
             String importantConcatenation = "";
             importantConcatenation += (message + "\n"); // add leading message and newline
             final int length = stackTrace.length;
