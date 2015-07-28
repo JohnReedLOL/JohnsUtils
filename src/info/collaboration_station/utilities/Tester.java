@@ -49,6 +49,56 @@ public class Tester {
     private static boolean wasClosed_ = false;
     // </editor-fold>
     // <editor-fold defaultstate="collapsed" desc="Functions">
+    
+    /**
+     * Checks to see if an argument is true and throws a
+     * {@link java.lang.IllegalArgumentException} if false.
+     *
+     * @param arg the precondition argument that must be true.
+     * @param message the message to be contained with your
+     * {@link java.lang.IllegalArgumentException}.
+     */
+    public static void checkArg(boolean arg, String message) {
+        if (!arg) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+    
+    /**
+     * Checks to see if an argument is true and throws a
+     * {@link java.lang.IllegalArgumentException} if false.
+     *
+     * @param arg the precondition argument that must be true.
+     * @param message the message to be contained with your
+     * {@link java.lang.IllegalArgumentException}.
+     */
+    public static void checkArg(String message, boolean arg) {
+        if (!arg) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+    
+    /**
+     * Checks that an object is not null. If null, throws a {@link java.lang.IllegalArgumentException}.
+     * @param obj the object to not be null.
+     */
+    public static void checkNotNull(Object obj) {
+        if(obj == null) {
+            throw new NullPointerException(obj.getClass().getName() + " was null.");
+        }
+    }
+    
+    /**
+     * Checks that objects are not null. If null, throws a {@link java.lang.IllegalArgumentException}.
+     * @param objects the object which ought not be null.
+     */
+    public static void checkNotNull(Object... objects) {
+        for(int i = 0; i < objects.length; ++i) {
+            if(objects[i] == null) {
+                throw new NullPointerException(objects[i].getClass().getName() + " was null.");
+            }
+        }
+    }
 
     /**
      * Closes the Tester by killing any background threads it may be running and
