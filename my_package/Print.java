@@ -1,4 +1,4 @@
-package my_package;
+package info.collaboration_station.utilities;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -75,7 +75,7 @@ public class Print {
         ONLY_STANDARD_OUT, ONLY_STANDARD_ERROR, BOTH
     }
     // </editor-fold>
-    // <editor-fold defaultstate="collapsed" desc="Vars, Getters, and Setters">
+    // <editor-fold defaultstate="collapsed" desc="Variables">
     /**
      * The system independent line separator, shortened to two letters for
      * convenience.
@@ -83,8 +83,12 @@ public class Print {
     private static final String ls = System.getProperty("line.separator");
 
     /*static {
-        Tester.check(ls != null);
-    }*/
+     Tester.check(ls != null);
+     }*/
+    /**
+     * True to only print errors, false to print non-errors too.
+     */
+    private static boolean myOnlyPrintErrors_ = false;
 
     /**
      * The number of rows in a stack trace to be displayed in the terminal (in
@@ -92,45 +96,26 @@ public class Print {
      * always backed up to the log file just in case. If this value is somehow
      * negative, no rows can be printed.
      */
-    public static int myNumRowsPerStackTrace_ = 6;
-
-    /**
-     * @return the number of stack trace rows to be displayed in the terminal.
-     */
-    //public static int getNumberOfRowsInStackTraces() {
-    //    return myNumRowsPerStackTrace_;
-    //}
-
-    /**
-     * @param numRows the number of stack trace rows that you would like to see
-     * in the terminal when you print out a stack trace. Although not all rows
-     * will appear in the terminal, by default they be sent to the log file.
-     */
-    //public static void setNumberOfRowsInStackTraces(int numRows) {
-    //    if (numRows < 0) {
-    //        throw new IllegalArgumentException("You can't display a negative number of rows in a stack trace.");
-    //    }
-    //    myNumRowsPerStackTrace_ = numRows;
-    //}
+    private static int myNumRowsPerStackTrace_ = 6;
 
     /**
      * When this variable is true, the log file will be printed to. If it is
      * false, the log file will not be used even if it can be written to.
      */
-    private static final boolean myPrintToLogFile_ = true;
+    private static boolean myPrintToLogFile_ = true;
 
     /**
      * When this variable is true, the terminal will be printed to. If it is
      * false, the terminal will not be printed to.
      */
-    public static boolean myPrintToTerminal_ = true;
+    private static boolean myPrintToTerminal_ = true;
 
     /**
      * All messages that are at this significance level or higher are printed.
      * By default set to
      * {@link info.collaboration_station.utilities.Printer.Significance#SIGNIFICANT}
      */
-    public static Significance mySignificanceLevel_ = Significance.SIGNIFICANT;
+    private static Significance myOutputSignificanceLevel_ = Significance.SIGNIFICANT;
 
     /**
      * Specified where terminal output should go. Since the color black is
@@ -138,13 +123,15 @@ public class Print {
      * standard error causes out-of-order print statements, the default setting
      * is only standard out, even for exceptions.
      */
-    public static DefaultPrintStream myDefaultPrintStream_ = DefaultPrintStream.ONLY_STANDARD_OUT;
+    private static DefaultPrintStream myDefaultPrintStream_ = DefaultPrintStream.ONLY_STANDARD_OUT;
 
     /**
      * Expresses whether or not the printer is closed.
      */
     private static boolean wasClosed_ = false;
 
+    // </editor-fold>
+    // <editor-fold defaultstate="collapsed" desc="Getters and Setters">
     /**
      * @return true is this printer was closed, false otherwise.
      */
@@ -153,13 +140,47 @@ public class Print {
     }
 
     /**
-     * Gets the variable {@link #printToLogFile_}.
+     * @return the value of
+     * {@link info.collaboration_station.utilities.Print#myOnlyPrintErrors_}.
+     */
+    public static boolean myOnlyPrintErrorsGetter() {
+        return myOnlyPrintErrors_;
+    }
+
+    /**
+     * @param onlyPrintErrors true to only print
+     * errors/not_good_messages/std_error intended messages. False otherwise.
      *
+     */
+    public static void myOnlyPrintErrorsSetter(boolean onlyPrintErrors) {
+        myOnlyPrintErrors_ = onlyPrintErrors;
+    }
+
+    /**
+     * @return the number of stack trace rows to be displayed in the terminal.
+     */
+    public static int myNumRowsPerStackGetter() {
+        return myNumRowsPerStackTrace_;
+    }
+
+    /**
+     * @param numRows the number of stack trace rows that you would like to see
+     * in the terminal when you print out a stack trace. Although not all rows
+     * will appear in the terminal, by default they be sent to the log file.
+     */
+    public static void myNumRowsPerStackTraceSetter(int numRows) {
+        if (numRows < 0) {
+            throw new IllegalArgumentException("You can't display a negative number of rows in a stack trace.");
+        }
+        myNumRowsPerStackTrace_ = numRows;
+    }
+
+    /**
      * @return true if log file printing is on, false otherwise.
      */
-    /*public static boolean getPrintToLogFile() {
+    public static boolean myPrintToLogFileGetter() {
         return myPrintToLogFile_;
-    }*/
+    }
 
     /**
      * Determines whether or not the log file should be printed to.
@@ -167,18 +188,16 @@ public class Print {
      * @param useLogFile true for printing to the log file and false for no
      * printing to the log file.
      */
-    /*public static void setPrintToLogFile(boolean useLogFile) {
+    public static void myPrintToLogFileSetter(boolean useLogFile) {
         myPrintToLogFile_ = useLogFile;
-    }*/
+    }
 
     /**
-     * Gets the variable {@link #printToTerminal_}
-     *
      * @return true if terminal printing is on, false otherwise.
      */
-    /*public static boolean getPrintToTerminal() {
+    public static boolean myPrintToTerminalGetter() {
         return myPrintToTerminal_;
-    }*/
+    }
 
     /**
      * Determines whether of not the terminal should be printed to.
@@ -186,46 +205,47 @@ public class Print {
      * @param toPrint true for printing to the terminal or false for no printing
      * to the terminal.
      */
-    /*public static void setPrintToTerminal(boolean toPrint) {
+    public static void myPrintToTerminalSetter(boolean toPrint) {
         myPrintToTerminal_ = toPrint;
-    }*/
+    }
 
     /**
-     * Gets the variable {@link #mySignificanceLevel_}
+     * Gets the variable {@link #myOutputSignificanceLevel_}
      *
      * @return The significance level below which no terminal output will be
      * displayed.
      */
-    /*public static Significance getMyOutputSignificanceLevel() {
-        return mySignificanceLevel_;
-    }*/
+    public static Significance myOutputSignificanceLevelGetter() {
+        return myOutputSignificanceLevel_;
+    }
 
     /**
-     * Sets the variable {@link #mySignificanceLevel_}
+     * Sets the variable {@link #myOutputSignificanceLevel_}
      *
      * @param level all messages that are at this significance level or higher
      * are printed. Messages that are below (less important than) this
      * significance level are not printed.
      */
-    /*public static void setMyOutputSignificanceLevel(Significance level) {
-        mySignificanceLevel_ = level;
-    }*/
+    public static void myOutputSignificanceLevelSetter(Significance level) {
+        myOutputSignificanceLevel_ = level;
+    }
 
     /**
-     * Gets the variable {@link #myTargetPrintStream_}
+     * Gets the variable
+     * {@link info.collaboration_station.utilities.Print#myDefaultPrintStream_}
      */
-    /*public static DefaultPrintStream getMyDefaultPrintStream() {
+    public static DefaultPrintStream myDefaultPrintStreamGetter() {
         return myDefaultPrintStream_;
-    }*/
+    }
 
     /**
      * All terminal error messages will go through this DefaultPrintStream.
      */
-    /*public static void setMyDefaultPrintStream(DefaultPrintStream streamType) {
+    public static void myDefaultPrintStreamSetter(DefaultPrintStream streamType) {
         myDefaultPrintStream_ = streamType;
-    }*/
+    }
     // </editor-fold>
-    // <editor-fold defaultstate="collapsed" desc="Delayed Initialization Vars">
+    // <editor-fold defaultstate="collapsed" desc="Delayed Initialization Variables">
     /**
      * The name of the folder that holds all the log files, or null if there are
      * no log files.
@@ -372,21 +392,20 @@ public class Print {
     }
 
     /**
-     * Tries to write text to log file. Replaces all "\n" newline characters
-     * that may have been sent to the terminal with OS specific end of line
-     * characters before printing to the text file.
+     * Tries to write text to log file. Don't forget to replace all "\n" newline
+     * characters that may have been sent to the terminal with OS specific end
+     * of line characters before printing to the text file.
      *
      * @param text the text to be written to the log file.
      * @return false if no text is written or true if text is successfully
      * written.
      */
-    private static boolean tryWritingSomethingToLogFileNoNewline(String text) {
+    private static boolean tryWritingSomethingToLogFileNoNewline(final String text) {
         if (myLogBufferedWriterOrNull_ == null) {
             return false;
         } else {
             try {
-                String updatedText = text.replaceAll("\n", ls);
-                myLogBufferedWriterOrNull_.write(updatedText);
+                myLogBufferedWriterOrNull_.write(text);
                 myLogBufferedWriterOrNull_.flush();
                 return true;
             } catch (IOException ioe) {
@@ -415,8 +434,8 @@ public class Print {
     /**
      * Prints the name of the current thread and where the printNonError
      * statement comes from to standard output or to the stream specified by
-     * {@link #myDefaultPrintStream_}. The {@link #myDefaultPrintStream_} variable
-     * acts as a global override for the preferred output stream of the
+     * {@link #myDefaultPrintStream_}. The {@link #myDefaultPrintStream_}
+     * variable acts as a global override for the preferred output stream of the
      * application.
      *
      * @param message - message to be printed
@@ -560,9 +579,6 @@ public class Print {
     protected static class Package_Private {
 
         /**
-         * ONLY MEANT BE BE USED IN THE info.collaboration-station.utilities
-         * PACKAGE.
-         *
          * Prints a stack trace (starting from firstRow) which is preceded by a
          * leading message ("\n" added to end of leading message) and followed
          * by a newline at the end.
@@ -629,39 +645,53 @@ public class Print {
          * @param condition whether the message is an error or non-error message
          */
         public static synchronized void printToReadout(final String message, ReadoutCondition condition, Significance severity) {
-
+            // All error messages have a four space indent to differentiate them.
+            final String messageWithIndentAndLineBreaks = message.replaceAll("\n", ls+"    "); // indent is for errors.
+            final String messageWithLineBreaks = message.replaceAll("\n", ls);
             // Logging happens regardless of severity.
             if (myPrintToLogFile_) {
                 // log stuff
                 if (!(Print.myLogFileNameOrNull_ == null)) {
                     //final String logFilesPathString = FileFinder.tryFindPathToFileWhoseNameIs(myLogFileNameOrNull_);
                     //Tester.check(logFilesPathString != null, "The log file name is non-null, so the log file must exist.");
-                    boolean success = Print.
-                            tryWritingSomethingToLogFileNoNewline(message.replaceAll("\n", ls));
-                // this success is being silently ignored if it doesn't write to log file,
-                    // I'm not doing anything about it.
+                    if (myDefaultPrintStream_ == DefaultPrintStream.ONLY_STANDARD_ERROR
+                            || (myDefaultPrintStream_ == DefaultPrintStream.BOTH && condition == ReadoutCondition.BAD)) {
+                        tryWritingSomethingToLogFileNoNewline(messageWithIndentAndLineBreaks);
+                    } else {
+                        boolean success = Print.
+                                tryWritingSomethingToLogFileNoNewline(messageWithLineBreaks);
+                        // this success is being silently ignored if it doesn't write to log file,
+                        // I'm not doing anything about it.
+                    }
                 } else {
                     // Don't bother, it won't work.
                 }
             }
+            if (myOnlyPrintErrors_ && (condition == ReadoutCondition.GOOD)) {
+                return; // No good things can be printed when myOnlyPrintErrors_ is true.
+            }
             if (!myPrintToTerminal_) {
                 // Do not printNonError anything.
                 return;
-            } else if (mySignificanceLevel_.getSignificance() > severity.getSignificance()) {
+            } else if (myOutputSignificanceLevel_.getSignificance() > severity.getSignificance()) {
                 // This message is not important enough to be printed. 
                 return; // return without printing to terminal.
             } else {
                 // This message is important enough to be printed to terminal.
                 if (myDefaultPrintStream_ == DefaultPrintStream.ONLY_STANDARD_OUT) {
-                    System.out.print(message);
+                    System.out.print(messageWithLineBreaks);
+                    System.out.flush();
                 } else if (myDefaultPrintStream_ == DefaultPrintStream.ONLY_STANDARD_ERROR) {
-                    System.err.print(message);
+                    System.err.print(messageWithIndentAndLineBreaks); // add 4 space indent to errors
+                    System.err.flush();
                 } else {
                     // myDefaultPrintStream_ == BOTH
                     if (condition == ReadoutCondition.BAD) {
-                        System.err.print(message);
+                        System.err.print(messageWithIndentAndLineBreaks); // add 4 space indent to errors
+                        System.err.flush();
                     } else if (condition == ReadoutCondition.GOOD) {
-                        System.out.print(message);
+                        System.out.print(messageWithLineBreaks);
+                        System.out.flush();
                     } else {
                         //Tester.killApplication("This condition is logically impossible");
                     }
