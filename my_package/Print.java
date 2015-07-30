@@ -1,4 +1,4 @@
-package info.collaboration_station.utilities;
+// put it in whatever package you choose.
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -345,7 +345,7 @@ public class Print {
                 if (myLogOutputStreamWriterOrNull_ != null) {
                     myLogBufferedWriterOrNull_ = new BufferedWriter(myLogOutputStreamWriterOrNull_);
                     try {
-                        myLogBufferedWriterOrNull_.write("Starting log file" + ls);
+                        myLogBufferedWriterOrNull_.write(" ");
                         success = true;
                     } catch (IOException ioe) {
                         // Just ignore it - don't kill the thread.
@@ -543,7 +543,7 @@ public class Print {
         // prints the first n lines of the stack trace, starting from line zero.
         Package_Private.printStackTraceInternally(toPrint, t.getStackTrace(), 0);
         // prints the line where print stack trace was called in case differes from location where the exception was caught/thrown.
-        Package_Private.printLineToReadout(Thread.currentThread().getStackTrace()[3].toString() + "\n", ReadoutCondition.BAD, Significance.VERY_SIGNIFICANT);
+        Package_Private.printLineToReadout("Printed at: " + Thread.currentThread().getStackTrace()[2].toString(), ReadoutCondition.BAD, Significance.VERY_SIGNIFICANT);
 
     }
 
@@ -564,13 +564,23 @@ public class Print {
         printThrowableInternal(message, t);
     }
 
+    public static void exception(Throwable t, String message) {
+        if (message == null) {
+            throw new IllegalArgumentException("Message cannot be null.");
+        }
+        if (t == null) {
+            throw new IllegalArgumentException("You can't print a null exception");
+        }
+        printThrowableInternal(message, t);
+    }
+
     private static void printThrowableInternal(String nonNullMessage, Throwable t) {
 
-        String toPrint = "\n" + nonNullMessage + "\n" + t;
+        String toPrint = "\n" + nonNullMessage + "\n" + t.toString();
         // prints the first n lines of the stack trace, starting from line zero.
         Package_Private.printStackTraceInternally(toPrint, t.getStackTrace(), 0);
         // prints the line where print stack trace was called in case differes from location where the exception was caught/thrown.
-        Package_Private.printLineToReadout("Printed at: " + Thread.currentThread().getStackTrace()[3].toString() + "\n", ReadoutCondition.BAD, Significance.VERY_SIGNIFICANT);
+        Package_Private.printLineToReadout("Printed at: " + Thread.currentThread().getStackTrace()[3].toString(), ReadoutCondition.BAD, Significance.VERY_SIGNIFICANT);
     }
 
     /**
@@ -624,77 +634,160 @@ public class Print {
                 return;
             }
         }
+        
+        /**
+         * Prints to the log file if permissions are right. Returns false
+         * otherwise.
+         *
+         * @return true if printing happens, false otherwise.
+         */
+        public static boolean tryPrintToLogIfPermitted(final String message) {
+            if (myPrintToLogFile_) {
+                // log stuff
+                if (!(Print.myLogFileNameOrNull_ == null)) {
+                    boolean success = Print.
+                            tryWritingSomethingToLogFileNoNewline(message);
+                    return success;
+                } else {
+                    // Don't bother, it won't work - log file name is null.
+                    return false;
+                }
+            } else {
+                // Not permitted to print to log file.
+                return false;
+            }
+        }
 
         /**
          * This print statement does not include a stack trace, but it does
-         * append a newline.
+         * append a newline. The new line has no demarkations on it.
          *
          * @see #printToReadout(java.lang.String,
          * info.collaboration_station.utilities.Printer.ReadoutCondition,
          * info.collaboration_station.utilities.Printer.Significance)
          */
-        public static void printLineToReadout(final String message, ReadoutCondition condition, Significance severity) {
-            printToReadout((message + "\n"), condition, severity);
+        public static void printLineToReadout(final String message, ReadoutCondition condition, Significance significance) {
+            //printToReadout((message + "\n"), condition, severity);
+            final String modifiedMessage;
+            if (condition == ReadoutCondition.GOOD) {
+                // More "+" signs means more good.
+                if (significance == Significance.VERY_SIGNIFICANT) {
+                    modifiedMessage = message.replaceAll("\n", ls + "++ +");
+                } else if (significance == Significance.SIGNIFICANT) {
+                    modifiedMessage = message.replaceAll("\n", ls + "++  ");
+                } else {
+                    // must be insignificant.
+                    modifiedMessage = message.replaceAll("\n", ls + "+   ");
+                }
+            } else {
+                // The condition must be bad. .
+                // Bad messages have a two space leading __ indent. 
+                // More "-" signs means less good.
+                if (significance == Significance.VERY_SIGNIFICANT) { 
+                    modifiedMessage = message.replaceAll("\n", ls + "-- -");
+                } else if (significance == Significance.SIGNIFICANT) {
+                    modifiedMessage = message.replaceAll("\n", ls + "--  ");
+                } else {
+                    // must be insignificant.
+                    modifiedMessage = message.replaceAll("\n", ls + "-   ");
+                }
+            }
+            // Logging to file happens regardless of significance.
+            tryPrintToLogIfPermitted(modifiedMessage); // ignore return value.
+            tryPrintToLogIfPermitted(ls); // Add that new line.
+            
+            // No logging to terminal if terminal logging is off.
+            // No logging to terminal if non-error is being printed and only errors are allowed.
+            // No logging to terminal if significance is low.
+            if ((!myPrintToTerminal_)
+                    || (myOnlyPrintErrors_ && (condition == ReadoutCondition.GOOD))
+                    || (myOutputSignificanceLevel_.getSignificance() > significance.getSignificance())) {
+                return; // No good things can be printed when myOnlyPrintErrors_ is true.
+            }
+
+            // This message is important enough to be printed to terminal.
+            if (myDefaultPrintStream_ == DefaultPrintStream.ONLY_STANDARD_OUT) {
+                System.out.println(modifiedMessage); // Don't forget that new line.
+                System.out.flush();
+            } else if (myDefaultPrintStream_ == DefaultPrintStream.ONLY_STANDARD_ERROR) {
+                System.err.println(modifiedMessage);
+                System.err.flush();
+            } else {
+                // myDefaultPrintStream_ == BOTH
+                if (condition == ReadoutCondition.BAD) {
+                    System.err.println(modifiedMessage);
+                    System.err.flush();
+                } else if (condition == ReadoutCondition.GOOD) {
+                    System.out.println(modifiedMessage);
+                    System.out.flush();
+                } else {
+                    //Tester.killApplication("This condition is logically impossible");
+                }
+            }
         }
 
         /**
          * Meant to be used by other print statements internally, this print
-         * statement does not include a stack trace.
+         * statement does not include a stack trace. Does not append a new line -
+         * any new line characters will be demarcated.
          *
          * @param message the message to be printed
          * @param condition whether the message is an error or non-error message
          */
-        public static synchronized void printToReadout(final String message, ReadoutCondition condition, Significance severity) {
-            // All error messages have a four space indent to differentiate them.
-            final String messageWithIndentAndLineBreaks = message.replaceAll("\n", ls+"    "); // indent is for errors.
-            final String messageWithLineBreaks = message.replaceAll("\n", ls);
-            // Logging happens regardless of severity.
-            if (myPrintToLogFile_) {
-                // log stuff
-                if (!(Print.myLogFileNameOrNull_ == null)) {
-                    //final String logFilesPathString = FileFinder.tryFindPathToFileWhoseNameIs(myLogFileNameOrNull_);
-                    //Tester.check(logFilesPathString != null, "The log file name is non-null, so the log file must exist.");
-                    if (myDefaultPrintStream_ == DefaultPrintStream.ONLY_STANDARD_ERROR
-                            || (myDefaultPrintStream_ == DefaultPrintStream.BOTH && condition == ReadoutCondition.BAD)) {
-                        tryWritingSomethingToLogFileNoNewline(messageWithIndentAndLineBreaks);
-                    } else {
-                        boolean success = Print.
-                                tryWritingSomethingToLogFileNoNewline(messageWithLineBreaks);
-                        // this success is being silently ignored if it doesn't write to log file,
-                        // I'm not doing anything about it.
-                    }
+        public static synchronized void printToReadout(final String message, ReadoutCondition condition, Significance significance) {
+
+            final String modifiedMessage;
+            if (condition == ReadoutCondition.GOOD) {
+                // More "+" signs means more good.
+                if (significance == Significance.VERY_SIGNIFICANT) {
+                    modifiedMessage = message.replaceAll("\n", ls + "++ +");
+                } else if (significance == Significance.SIGNIFICANT) {
+                    modifiedMessage = message.replaceAll("\n", ls + "++  ");
                 } else {
-                    // Don't bother, it won't work.
+                    // must be insignificant.
+                    modifiedMessage = message.replaceAll("\n", ls + "+   ");
+                }
+            } else {
+                // The condition must be bad. .
+                // Bad messages have a two space leading __ indent. 
+                // More "-" signs means less good.
+                if (significance == Significance.VERY_SIGNIFICANT) { 
+                    modifiedMessage = message.replaceAll("\n", ls + "-- -");
+                } else if (significance == Significance.SIGNIFICANT) {
+                    modifiedMessage = message.replaceAll("\n", ls + "--  ");
+                } else {
+                    // must be insignificant.
+                    modifiedMessage = message.replaceAll("\n", ls + "-   ");
                 }
             }
-            if (myOnlyPrintErrors_ && (condition == ReadoutCondition.GOOD)) {
+            // Logging to file happens regardless of significance.
+            tryPrintToLogIfPermitted(modifiedMessage); // ignore return value.
+            // No logging to terminal if terminal logging is off.
+            // No logging to terminal if non-error is being printed and only errors are allowed.
+            // No logging to terminal if significance is low.
+            if ((!myPrintToTerminal_)
+                    || (myOnlyPrintErrors_ && (condition == ReadoutCondition.GOOD))
+                    || (myOutputSignificanceLevel_.getSignificance() > significance.getSignificance())) {
                 return; // No good things can be printed when myOnlyPrintErrors_ is true.
             }
-            if (!myPrintToTerminal_) {
-                // Do not printNonError anything.
-                return;
-            } else if (myOutputSignificanceLevel_.getSignificance() > severity.getSignificance()) {
-                // This message is not important enough to be printed. 
-                return; // return without printing to terminal.
+
+            // This message is important enough to be printed to terminal.
+            if (myDefaultPrintStream_ == DefaultPrintStream.ONLY_STANDARD_OUT) {
+                System.out.print(modifiedMessage); // No new line.
+                System.out.flush();
+            } else if (myDefaultPrintStream_ == DefaultPrintStream.ONLY_STANDARD_ERROR) {
+                System.err.print(modifiedMessage);
+                System.err.flush();
             } else {
-                // This message is important enough to be printed to terminal.
-                if (myDefaultPrintStream_ == DefaultPrintStream.ONLY_STANDARD_OUT) {
-                    System.out.print(messageWithLineBreaks);
-                    System.out.flush();
-                } else if (myDefaultPrintStream_ == DefaultPrintStream.ONLY_STANDARD_ERROR) {
-                    System.err.print(messageWithIndentAndLineBreaks); // add 4 space indent to errors
+                // myDefaultPrintStream_ == BOTH
+                if (condition == ReadoutCondition.BAD) {
+                    System.err.print(modifiedMessage);
                     System.err.flush();
+                } else if (condition == ReadoutCondition.GOOD) {
+                    System.out.print(modifiedMessage);
+                    System.out.flush();
                 } else {
-                    // myDefaultPrintStream_ == BOTH
-                    if (condition == ReadoutCondition.BAD) {
-                        System.err.print(messageWithIndentAndLineBreaks); // add 4 space indent to errors
-                        System.err.flush();
-                    } else if (condition == ReadoutCondition.GOOD) {
-                        System.out.print(messageWithLineBreaks);
-                        System.out.flush();
-                    } else {
-                        //Tester.killApplication("This condition is logically impossible");
-                    }
+                    //Tester.killApplication("This condition is logically impossible");
                 }
             }
         }
