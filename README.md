@@ -1,5 +1,5 @@
 # JohnsUtils
-My utilities library
+My utilities library. Note: This code is in the public domain.
 
 # Printer
 
